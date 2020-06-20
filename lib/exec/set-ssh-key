@@ -1,0 +1,11 @@
+#!/bin/sh
+
+for user in root vagrant; do
+    home=$(getent passwd ${user} | cut -d: -f6)
+    if [ ! -e ${home}/.ssh/id_rsa ]; then
+	mkdir -p ${home}/.ssh
+	cp -p /vagrant/.ssh/id_rsa ${home}/.ssh
+	cat /vagrant/.ssh/id_rsa.pub >>${home}/.ssh/authorized_keys
+	chown -R ${user}:${user} ${home}/.ssh
+    fi
+done

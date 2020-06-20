@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# "|| true" for issues with NFS chown perm errors
+
+apt update || true
+[ $HOSTNAME = control ] && apt install -y ansible || true
