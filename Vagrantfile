@@ -2,6 +2,7 @@
 # vi: set ft=ruby :
 
 require 'net/ssh'
+require 'yaml'
 
 required_plugins = %w(
   vagrant-hostmanager
@@ -17,11 +18,11 @@ IP_PREFIX="172.22.22" # vbox virtual bridge
 #IP_PREFIX="172.55.55" # libvirt virtual bridge
 
 NODE_RAM=2048
-MASTER_RAM=4092
+MASTER_RAM=4096
 DISK_SIZE=10*GB
 ADD_DISK_FLAG=false
 
-machines= [
+MACHINES= [
   { name: "control" , ip: ip(101), primary: true , cpus: 4, mem: 1024      , add_disk: false },
   { name: "facility", ip: ip(141), primary: false, cpus: 2, mem: 1024      , add_disk: false },
   { name: "master"  , ip: ip(122), primary: false, cpus: 4, mem: MASTER_RAM, add_disk: ADD_DISK_FLAG, size: DISK_SIZE },
@@ -30,20 +31,21 @@ machines= [
   { name: "node3"   , ip: ip(133), primary: false, cpus: 4, mem: NODE_RAM  , add_disk: ADD_DISK_FLAG, size: DISK_SIZE },
 ]
 
-
+ANSIBLE_VARS="ansible/inventory/vars.yml"
 
 
 Vagrant.configure("2") do |config|
   config.vm.box = "generic/ubuntu1804"
   
-#  config.vm.synced_folder ".", "/vagrant", type: "nfs"
+  config.vm.synced_folder ".", "/vagrant", type: "nfs"
 
 #  config.vm.synced_folder ".", "/vagrant",
 #                          type: "nfs",
 #                          linux__nfs_options: ['rw','no_subtree_check','root_squash','async']
 
   if Vagrant.has_plugin?("vagrant-cachier")
-    config.cache.scope = :box unless ENV['VAGRANT_CACHIER_BOX_CACHING'] == false
+    #config.cache.scope = :box unless ENV['VAGRANT_CACHIER_BOX_CACHING'] == false
+    config.cache.scope = :machine
 
     config.cache.synced_folder_opts = {
       type: :nfs,
@@ -65,7 +67,7 @@ Vagrant.configure("2") do |config|
     libvirt.cpu_mode = 'host-passthrough'   
   end
 
-  machines.each do |m|
+  MACHINES.each do |m|
     node = m[:name]
     config.vm.define node, primary: m[:primary] do |c|
       c.vm.hostname = "#{node}.example.com"
@@ -89,13 +91,24 @@ Vagrant.configure("2") do |config|
     end
   end
 
+  config.vm.provision "shell", name: "link-vagrant", path: "lib/exec/link-vagrant"
   config.vm.provision "shell", name: "install-ansible", path: "lib/exec/install-ansible"
   config.vm.provision "shell", name: "set-ssh-key", path: "lib/exec/set-ssh-key"
 
 end
 
 
+def generate_host_vars
+  map = Hash.new
 
+  map["all"] = { "hosts" => {}}
+
+  MACHINES.each do |m|
+    map["all"]["hosts"][m[:name]] = { "node_ip" => m[:ip]}
+  end
+
+  File.open(ANSIBLE_VARS, "w") { |f| f.write(map.to_yaml) }
+end
 
 def install_plugins(plugins)
   needs_restart = false
@@ -144,4 +157,6 @@ end
 
 install_plugins required_plugins
 create_ssh_key
+
+generate_host_vars
 
