@@ -1,0 +1,4 @@
+#!/bin/sh
+
+ln -sf /vagrant /home/vagrant/src
+sudo ln -sf /vagrant /root/src
