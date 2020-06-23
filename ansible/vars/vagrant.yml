@@ -1,0 +1,3 @@
+home_dirs:
+  - { path: /root        , owner: root   , group: root    }
+  - { path: /home/vagrant, owner: vagrant, group: vagrant }

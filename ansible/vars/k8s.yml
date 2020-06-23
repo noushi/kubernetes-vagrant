@@ -1,0 +1,11 @@
+
+# one of two: calico or calico-typha
+k8s_calico_flavor: calico-typha
+k8s_calico_version: v3.14
+
+k8s_calicoctl_version: v3.15.0
+
+k8s_pod_network_cidr: 192.168.0.0/16
+k8s_kubeadm_init_cmd: kubeadm init --apiserver-advertise-address={{ node_ip }} --apiserver-cert-extra-sans={{ node_ip }}  --node-name {{ ansible_hostname }} --pod-network-cidr={{ k8s_pod_network_cidr }}
+
+

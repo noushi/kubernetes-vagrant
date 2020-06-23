@@ -1,0 +1,14 @@
+---
+- hosts: k8s-nodes
+  become: true
+  vars_files:
+    - vars/k8s.yml
+  vars:
+    # Load join file content (until we get a proper ansible (role!) structure)
+    kubernetes_join_command: "{{ lookup('file', 'tmp/join') }}"
+  tasks:
+    - name: Join node to Kubernetes master
+      shell: >
+        {{ kubernetes_join_command }}
+      args:
+        creates: /etc/kubernetes/kubelet.conf

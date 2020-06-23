@@ -1,0 +1,46 @@
+---
+- hosts: control
+  become: true
+  vars_files:
+    - vars/k8s.yml
+    - vars/vagrant.yml
+  tasks:
+    - name: Install Kubernetes binaries
+      apt: 
+        name: "{{ packages }}"
+        state: present
+        update_cache: no
+      vars:
+        packages:
+          - kubectl
+
+    - name: Create .kube folder
+      file:
+        path: /home/vagrant/.kube
+        state: directory
+
+    - name: Change admin.conf owner
+      file:
+        path: "{{ item.path }}/.kube"
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        state: directory
+      with_items:
+        - "{{ home_dirs }}"
+
+        
+    - name: Copy admin.conf file
+      copy:
+        src: tmp/admin.conf
+        dest: "{{ item.path }}/.kube/config"
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+      with_items:
+        - "{{ home_dirs }}"
+
+    - name: Download file with check (sha256)
+      get_url:
+        url: "https://github.com/projectcalico/calicoctl/releases/download/{{ k8s_calicoctl_version }}/calicoctl"
+        dest: /usr/local/bin/calicoctl
+        checksum: sha256:4600d5d7f08ed9cf479fc8fa87518dbbca32a473d0a4a212cfecb610c18216aa
+        mode: 0755

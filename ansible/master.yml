@@ -1,0 +1,79 @@
+---
+- hosts: k8s-masters
+  become: true
+  vars_files:
+    - vars/k8s.yml
+  tasks:
+    - debug:
+        msg: "{{ k8s_kubeadm_init_cmd }}"
+
+    - name: Check if Kubernetes has already been initialized.
+      stat:
+        path: /etc/kubernetes/admin.conf
+      register: kubernetes_init_stat
+  
+    - name: Initialize the Kubernetes cluster using kubeadm
+      command: "{{ k8s_kubeadm_init_cmd }}"
+      register: kubeadmin_init
+      when: not kubernetes_init_stat.stat.exists
+
+    - name: Print the init output to screen.
+      debug:
+        var: kubeadmin_init.stdout
+        verbosity: 2
+      when: not kubernetes_init_stat.stat.exists
+  
+    - name: Create .kube folder
+      file:
+        path: "{{ item }}/.kube"
+        state: directory
+      with_items:
+        - /root
+        - /home/vagrant
+  
+    - name: Copy admin.conf file
+      copy:
+        remote_src: yes
+        src: /etc/kubernetes/admin.conf
+        dest: "{{ item }}/.kube/config"
+      with_items:
+        - /root
+        - /home/vagrant
+
+#    - name: Copy join command to local file
+#      copy:
+#        remote_src: yes
+#        dest: tmp/join
+#        src: /etc/kubernetes/admin.conf
+#      become: false
+#      delegate_to: localhost
+        
+    - name: Change admin.conf owner
+      file:
+        path: "{{ item }}/.kube/config"
+#        owner: vagrant
+#        group: vagrant
+      with_items:
+        - /root
+        - /home/vagrant
+
+    - name: Install calico pod network
+      become: false
+      command: kubectl apply -f https://docs.projectcalico.org/{{ k8s_calico_version }}/manifests/calico.yaml
+  
+    - name: Generate join command
+      command: kubeadm token create --print-join-command
+      register: join_command
+  
+    - name: Copy join command to local file
+      copy: 
+        dest: tmp/join
+        content: "{{ join_command.stdout_lines[0] }}"
+      become: false
+      delegate_to: localhost
+
+    - name: copy admin.conf on the control node
+      fetch:
+        src: /etc/kubernetes/admin.conf
+        dest: tmp/admin.conf
+        flat: yes
