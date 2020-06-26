@@ -36,6 +36,9 @@ ANSIBLE_VARS="ansible/inventory/vars.yml"
 
 Vagrant.configure("2") do |config|
   config.vm.box = "generic/ubuntu1804"
+
+  # we want to run graphical tools from machines
+  config.ssh.forward_x11 = true
   
   config.vm.synced_folder ".", "/vagrant", type: "nfs"
 
