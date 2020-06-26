@@ -3,6 +3,7 @@
   become: true
   vars_files:
     - vars/k8s.yml
+    - vars/vagrant.yml
   tasks:
     - debug:
         msg: "{{ k8s_kubeadm_init_cmd }}"
@@ -25,20 +26,24 @@
   
     - name: Create .kube folder
       file:
-        path: "{{ item }}/.kube"
+        path: "{{ item.path }}/.kube"
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
         state: directory
       with_items:
-        - /root
-        - /home/vagrant
-  
+        - "{{ home_dirs }}"
+
+        
     - name: Copy admin.conf file
       copy:
         remote_src: yes
         src: /etc/kubernetes/admin.conf
-        dest: "{{ item }}/.kube/config"
+        dest: "{{ item.path }}/.kube/config"
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
       with_items:
-        - /root
-        - /home/vagrant
+        - "{{ home_dirs }}"
+
 
 #    - name: Copy join command to local file
 #      copy:
@@ -59,7 +64,7 @@
 
     - name: Install calico pod network
       become: false
-      command: kubectl apply -f https://docs.projectcalico.org/{{ k8s_calico_version }}/manifests/calico.yaml
+      command: kubectl apply -f https://docs.projectcalico.org/{{ k8s_calico_version }}/manifests/{{ k8s_calico_flavor }}.yaml
   
     - name: Generate join command
       command: kubeadm token create --print-join-command
