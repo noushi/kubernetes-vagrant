@@ -1,6 +1,6 @@
 
 # one of two: calico or calico-typha
-k8s_calico_flavor: calico-typha
+k8s_calico_flavor: calico
 k8s_calico_version: v3.14
 
 k8s_calicoctl_version: v3.15.0
