@@ -39,7 +39,8 @@ Vagrant.configure("2") do |config|
 
   # we want to run graphical tools from machines
   config.ssh.forward_x11 = true
-  
+  config.ssh.forward_agent = true
+
   config.vm.synced_folder ".", "/vagrant", type: "nfs"
 
 #  config.vm.synced_folder ".", "/vagrant",
