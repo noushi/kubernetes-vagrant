@@ -6,6 +6,7 @@ require 'yaml'
 
 required_plugins = %w(
   vagrant-hostmanager
+  vagrant-sshfs
 )
 
 def ip(n)
@@ -41,25 +42,16 @@ Vagrant.configure("2") do |config|
   config.ssh.forward_x11 = true
   config.ssh.forward_agent = true
 
-  config.vm.synced_folder ".", "/vagrant", type: "nfs"
-
-#  config.vm.synced_folder ".", "/vagrant",
-#                          type: "nfs",
-#                          linux__nfs_options: ['rw','no_subtree_check','root_squash','async']
+  #  config.vm.synced_folder ".", "/vagrant", type: "nfs"
+  config.vm.synced_folder ".", "/vagrant", type: "sshfs"
 
   if Vagrant.has_plugin?("vagrant-cachier")
     #config.cache.scope = :box unless ENV['VAGRANT_CACHIER_BOX_CACHING'] == false
     config.cache.scope = :machine
 
-    config.cache.synced_folder_opts = {
-      type: :nfs,
-      # The nolock option can be useful for an NFSv3 client that wants to avoid the
-      # NLM sideband protocol. Without this option, apt-get might hang if it tries
-      # to lock files needed for /var/cache/* operations. All of this can be avoided
-      # by using NFSv4 everywhere. Please note that the tcp option is not the default.
-      #      mount_options: ['rw', 'vers=3', 'tcp', 'nolock']
-      mount_options: ['rw', 'vers=4', 'tcp', 'nolock']
-    }
+    config.cache.auto_detect  = false
+    
+    config.cache.synced_folder_opts = { type: :sshfs }
   end
 
   # vagrant-hostmanager: Configure /etc/hosts in machines so that they can look up each other
