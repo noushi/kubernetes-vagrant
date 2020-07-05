@@ -10,69 +10,67 @@
 
 - Virtualbox or libvirt (kvm)
 - Vagrant
+- openssh-sftp-server
 
-## NFS Host Setup
+## Host Setup
 
 You may need to change the value of the `BRIDGE` envvar depending on your actual setup
-
-### Virtualbox 
-
-```bash
-BRIDGE=vboxnet2
-PORTS="111 2049 13025 "
-for i in $PORTS ; do
-	ufw allow in on $BRIDGE to any port $i
-done
-```
-
-### Libvirt 
-
-```bash
-BRIDGE=virbr3
-PORTS="111 2049 13025 "
-for i in $PORTS ; do
-	ufw allow in on $BRIDGE to any port $i
-done
-```
 
 
 # Steps
 
+## Creating the environment
+
 1. `vagrant up` (or `vagrant up --provider=$YOUR_PREFERRED_PROVIDER`)
-1. 
+1. have a coffee
 
 
+## Installing Kubernetes (with Calico)
 
-# misc
+1. `vagrang ssh` (will get you to the `control` VM)
+
+1. run ansible playbooks
+ ```
+cd src/ansible`
+ansible-playbook apt.yml
+ansible-playbook base.yml
+ansible-playbook no-swap.yml
+ansible-playbook master.yml
+ansible-playbook node.yml
+ansible-playbook control.yml
+ ```
+
+# Misc
+
+## aliases
+
+in the `control` VM, these aliases will prove useful:
+```
+echo "alias each='ansible -e ansible_become=yes all -a'"  
+echo "alias keach='ansible -e ansible_become=yes k8s -a'" 
+```
 
 
 ## reset cluster
 
-```
+- keep an eye on non master nodes
+ ```
 watch -n1 kubectl get node -l "'kubernetes.io/hostname != master'"
-```
+ ```
 
-```
+- reset non master nodes then the master
+ ```
 keach 'kubeadm -f reset' --limit k8s-nodes
 k delete node -l kubernetes.io/hostname=master-
-```
+ ```
 
-
-```
-iptables -P INPUT ACCEPT
-iptables -P FORWARD ACCEPT
-iptables -P OUTPUT ACCEPT
-iptables -t nat -F
-iptables -t mangle -F
-iptables -F
-iptables -X
-```
-
-```
+- reset netfilter tables
+ ```
 keach 'sh -c "iptables -P INPUT ACCEPT ; iptables -P FORWARD ACCEPT ; iptables -P OUTPUT ACCEPT ; iptables -t nat -F ; iptables -t mangle -F ; iptables -F ; iptables -X"'
-```
+ ```
 
-```
+- check netfilter tables status
+ ```
 keach 'iptables -vnL'
-```
+ ```
 
