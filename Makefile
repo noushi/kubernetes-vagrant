@@ -2,6 +2,7 @@
 
 
 master:
+	mkdir -p rsrc
 	git archive --output rsrc/kubernetes-vagrant-master.tar.gz master
 
 
