@@ -39,6 +39,17 @@ ansible-playbook master.yml
 ansible-playbook node.yml
 ansible-playbook control.yml
  ```
+### Using a specific Kubernetes control plane version
+
+Replace 
+```
+ansible-playbook master.yml
+```
+with 
+```
+ansible-playbook master.yml -e k8s_extra_opts="--kubernetes-version=v1.19.2"
+```
+
 
 # Misc
 
